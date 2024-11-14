@@ -42,10 +42,8 @@ def df_cleaner(data_frame) -> pd.DataFrame:
     data_frame = data_frame.astype(str)  # Convert all data to string
     data_frame.drop_duplicates(inplace=True)  # Remove duplicate data from DataFrame
     # Apply the function to all columns for Cleaning
-    print('columns', columns)
     for column in columns:
         if 'title' in column or 'parties_involved' in column or 'alias' in column:
-            print('columns', columns)
             # Remove punctuation
             data_frame[column] = data_frame[column].str.replace('–', '')
             # data_frame[column] = data_frame[column].apply(remove_specific_punctuation)
