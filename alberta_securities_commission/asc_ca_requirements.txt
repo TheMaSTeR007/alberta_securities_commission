@@ -1,0 +1,12 @@
+# Core dependencies
+scrapy  # Web scraping framework
+typing-extensions  # For advanced typing like Iterable
+pandas  # Data manipulation and analysis
+requests  # HTTP library for API calls
+
+# External or custom modules
+browserforge  # Ensure this is installable or provide source
+evpn  # VPN handling (if evpn is a valid library you are using)
+
+# Use below command to install above modules
+# pip install -r asc_ca_requirements.txt

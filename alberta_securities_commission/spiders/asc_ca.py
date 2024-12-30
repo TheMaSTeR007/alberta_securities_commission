@@ -124,7 +124,7 @@ class AscCaSpider(scrapy.Spider):
         time.sleep(10)  # keep some time delay before starting scraping because connecting
         print('VPN Connected!' if self.api.is_connected else 'VPN Not Connected!')
 
-        self.final_data = list()
+        self.final_data_list = list()
         # Path to store the Excel file can be customized by the user
         self.excel_path = r"../Excel_Files"  # Client can customize their Excel file path here (default: govtsites > govtsites > Excel_Files)
         os.makedirs(self.excel_path, exist_ok=True)  # Create Folder if not exists
@@ -141,22 +141,6 @@ class AscCaSpider(scrapy.Spider):
             '_ga_MP2P11677J': 'GS1.1.1729499227.1.1.1729501235.0.0.0',
         }
 
-        # self.headers = {
-        #     'accept': '*/*',
-        #     'accept-language': 'en-US,en;q=0.9',
-        #     'authorization': 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJ2OCI6dHJ1ZSwidG9rZW5JZCI6InFpcTQ0ZmwyYmtpMmVtbTJ3czVwcXcyYWptIiwib3JnYW5pemF0aW9uIjoiYWxiZXJ0YXNlY3VyaXRpZXNjb21taXNzaW9ucHJvZDJhMzR0aXk3IiwidXNlcklkcyI6W3sidHlwZSI6IlVzZXIiLCJuYW1lIjoiZXh0cmFuZXRcXEFub255bW91cyIsInByb3ZpZGVyIjoiRXhwYW5kZWQgU2l0ZWNvcmUgU2VjdXJpdHkgUHJvdmlkZXIgZm9yIEFTQy1QUk9EIn0seyJ0eXBlIjoiVXNlciIsIm5hbWUiOiJhbm9ueW1vdXMiLCJwcm92aWRlciI6IkVtYWlsIFNlY3VyaXR5IFByb3ZpZGVyIn1dLCJyb2xlcyI6WyJxdWVyeUV4ZWN1dG9yIl0sImlzcyI6IlNlYXJjaEFwaSIsImV4cCI6MTcyOTU4NDQwOSwiaWF0IjoxNzI5NDk4MDA5fQ.L2zvXVicznIAlVhQwEW_M-Jb2COaGu69JeTsrsXtSfA',
-        #     'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        #     'origin': 'https://www.asc.ca',
-        #     'priority': 'u=1, i',
-        #     'referer': 'https://www.asc.ca/en/enforcement/notices-decisions-and-orders',
-        #     'sec-ch-ua': '"Google Chrome";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
-        #     'sec-ch-ua-mobile': '?0',
-        #     'sec-ch-ua-platform': '"Windows"',
-        #     'sec-fetch-dest': 'empty',
-        #     'sec-fetch-mode': 'cors',
-        #     'sec-fetch-site': 'same-origin',
-        #     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-        # }
         # Headers changes at some interval, hence using HeaderGenerator to generate headers
         self.headers = browserforge.headers.HeaderGenerator().generate()
         self.number_of_results = 10  # Results per page
@@ -201,22 +185,25 @@ class AscCaSpider(scrapy.Spider):
             data_dict['alias'] = title_alias_tuple[1]
             data_dict['type'] = get_notices_type(result_dict)
             data_dict['parties_involved'] = get_parties_involved(result_dict)
-            self.final_data.append(data_dict)
+            self.final_data_list.append(data_dict)
             # print(data_dict)
 
     def close(self, reason):
         print('closing spider...')
         print("Converting List of Dictionaries into DataFrame, then into Excel file...")
-        try:
-            print("Creating Native sheet...")
-            data_df = pd.DataFrame(self.final_data)
-            data_df = df_cleaner(data_frame=data_df)  # Apply the function to all columns for Cleaning
-            with pd.ExcelWriter(path=self.filename, engine='xlsxwriter') as writer:
-                data_df.insert(loc=0, column='id', value=range(1, len(data_df) + 1))  # Add 'id' column at position 1
-                data_df.to_excel(excel_writer=writer, index=False)
-            print("Native Excel file Successfully created.")
-        except Exception as e:
-            print('Error while Generating Native Excel file:', e)
+        if self.final_data_list:
+            try:
+                print("Creating Native sheet...")
+                data_df = pd.DataFrame(self.final_data_list)
+                data_df = df_cleaner(data_frame=data_df)  # Apply the function to all columns for Cleaning
+                with pd.ExcelWriter(path=self.filename, engine='xlsxwriter') as writer:
+                    data_df.insert(loc=0, column='id', value=range(1, len(data_df) + 1))  # Add 'id' column at position 1
+                    data_df.to_excel(excel_writer=writer, index=False)
+                print("Native Excel file Successfully created.")
+            except Exception as e:
+                print('Error while Generating Native Excel file:', e)
+        else:
+            print('Final-Data-List is empty.')
         if self.api.is_connected:  # Disconnecting VPN if it's still connected
             self.api.disconnect()
             print('VPN Connected!' if self.api.is_connected else 'VPN Disconnected!')
